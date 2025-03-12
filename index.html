@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive World Map</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { width: 100vw; height: 100vh; }
+        .info-popup {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZGVlcGlrYWdhbmVzYW4iLCJhIjoiY204NXZpZ2VsMmpncjJpc2FqeXR0c2lndyJ9.-b96pCgNLMQI5bD9LWy6vg';
+
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/light-v10',
+            center: [0, 20],
+            zoom: 1.5
+        });
+
+        let geoTag = null;
+        let infoPopup = null;
+        let hoveredCountryId = null;
+
+        map.on('load', () => {
+            // Add country boundaries source
+            map.addSource('countries', {
+                type: 'vector',
+                url: 'mapbox://mapbox.country-boundaries-v1'
+            });
+
+            // Add country boundaries layer
+            map.addLayer({
+                'id': 'country-boundaries',
+                'type': 'fill',
+                'source': 'countries',
+                'source-layer': 'country_boundaries',
+                'paint': {
+                    'fill-color': '#627BC1',
+                    'fill-opacity': 0.5
+                }
+            });
+
+            // Show geo tag and clear popup on hover
+            map.on('mousemove', 'country-boundaries', (e) => {
+                const countryId = e.features[0].id;
+
+                if (hoveredCountryId !== countryId) {
+                    hoveredCountryId = countryId;
+
+                    // Remove previous geo tag
+                    if (geoTag) geoTag.remove();
+
+                    // Add new geo tag marker
+                    geoTag = new mapboxgl.Marker({ color: 'red' })
+                        .setLngLat(e.lngLat)
+                        .addTo(map);
+
+                    // Clear any open popups
+                    if (infoPopup) {
+                        infoPopup.remove();
+                        infoPopup = null; // Reset the popup state
+                    }
+                }
+
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            // Remove pointer style on mouse leave (but keep geo tag)
+            map.on('mouseleave', 'country-boundaries', () => {
+                map.getCanvas().style.cursor = '';
+            });
+
+            // Show info popup on click
+            map.on('click', 'country-boundaries', (e) => {
+                if (infoPopup) infoPopup.remove(); // Clear old popup
+
+                infoPopup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
+                    .setLngLat(e.lngLat)
+                    .setHTML('<div class="info-popup">Sample info about this location.</div>')
+                    .addTo(map);
+            });
+        });
+    </script>
+</body>
+</html>
+
