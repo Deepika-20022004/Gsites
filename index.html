@@ -16,6 +16,17 @@
             border-radius: 8px;
             font-size: 14px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            height: 100px;
+            overflow-y: scroll;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
         }
     </style>
 </head>
@@ -36,14 +47,37 @@
         let infoPopup = null;
         let hoveredCountryId = null;
 
+        const countryInfo = {
+            'USA': `
+            <table>
+                    <tr><th>Clinics</th><td>8000</td></tr>
+                    <tr><th>Hospitals</th><td>2200</td></tr>
+                    <tr><th>Medical Colleges</th><td>75</td></tr>
+                    <tr><th>Hospitals</th><td>2200</td></tr>
+                    <tr><th>Medical Colleges</th><td>75</td></tr>
+                    <tr><th>Hospitals</th><td>2200</td></tr>
+                    <tr><th>Medical Colleges</th><td>75</td></tr>
+                    <tr><th>Hospitals</th><td>2200</td></tr>
+                    <tr><th>Medical Colleges</th><td>75</td></tr>
+            </table>
+                `,
+            'CAN': `
+            <ul>
+                    <li>Free universal healthcare</li>
+                    <li>Renowned medical research centers</li>
+                    <li>Growing telemedicine services</li>
+                </ul>`,
+            'FRA': 'France: Renowned for its art, cuisine, and the Eiffel Tower.',
+            'JPN': 'Japan: A country blending ancient traditions with modern technology.',
+            'AUS': 'Australia: Known for its unique wildlife and Great Barrier Reef.'
+        };
+
         map.on('load', () => {
-            // Add country boundaries source
             map.addSource('countries', {
                 type: 'vector',
                 url: 'mapbox://mapbox.country-boundaries-v1'
             });
 
-            // Add country boundaries layer
             map.addLayer({
                 'id': 'country-boundaries',
                 'type': 'fill',
@@ -55,47 +89,43 @@
                 }
             });
 
-            // Show geo tag and clear popup on hover
             map.on('mousemove', 'country-boundaries', (e) => {
-                const countryId = e.features[0].id;
+                const country = e.features[0].properties.iso_3166_1_alpha_3;
 
-                if (hoveredCountryId !== countryId) {
-                    hoveredCountryId = countryId;
+                if (hoveredCountryId !== country) {
+                    hoveredCountryId = country;
 
-                    // Remove previous geo tag
                     if (geoTag) geoTag.remove();
 
-                    // Add new geo tag marker
-                    geoTag = new mapboxgl.Marker({ color: 'red' })
+                    geoTag = new mapboxgl.Marker({ color: 'blue' })
                         .setLngLat(e.lngLat)
                         .addTo(map);
 
-                    // Clear any open popups
                     if (infoPopup) {
                         infoPopup.remove();
-                        infoPopup = null; // Reset the popup state
+                        infoPopup = null;
                     }
                 }
 
                 map.getCanvas().style.cursor = 'pointer';
             });
 
-            // Remove pointer style on mouse leave (but keep geo tag)
             map.on('mouseleave', 'country-boundaries', () => {
                 map.getCanvas().style.cursor = '';
             });
 
-            // Show info popup on click
             map.on('click', 'country-boundaries', (e) => {
-                if (infoPopup) infoPopup.remove(); // Clear old popup
+                const country = e.features[0].properties.iso_3166_1_alpha_3;
+                const info = countryInfo[country] || 'No information available for this location.';
+
+                if (infoPopup) infoPopup.remove();
 
                 infoPopup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
                     .setLngLat(e.lngLat)
-                    .setHTML('<div class="info-popup">Sample info about this location.</div>')
+                    .setHTML(`<div class="info-popup">${info}</div>`)
                     .addTo(map);
             });
         });
     </script>
 </body>
 </html>
-
